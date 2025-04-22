@@ -99,6 +99,7 @@
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Models\SummaryItem.cs" />
     <Compile Include="Converters\CheckToColorConverter.cs" />
+    <Compile Include="Converters\WidthToColumnsConverter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

@@ -97,10 +97,7 @@
     </Compile>
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
-    <Compile Include="ViewModels\ProtocolViewModel.cs" />
-    <Compile Include="ViewModels\GroupViewModel.cs" />
     <Compile Include="Models\SummaryItem.cs" />
-    <Compile Include="Models\Protocol.cs" />
     <Compile Include="Converters\CheckToColorConverter.cs" />
     <Compile Include="Converters\WidthToColumnsConverter.cs" />
     <Compile Include="Converters\BoolToColorConverter.cs" />

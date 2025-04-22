@@ -9,7 +9,6 @@ using System.IO;
 using System.Windows;
 using System;
 using System.Collections.Generic;
-using System.Xml.Serialization;
 
 namespace summary_list.ViewModels
 {
@@ -28,26 +27,12 @@ namespace summary_list.ViewModels
             set { SetProperty(ref _title, value); }
         }
 
-        private ObservableCollection<ProtocolViewModel> _protocols;
-        public ObservableCollection<ProtocolViewModel> Protocols
-        {
-            get { return _protocols; }
-            set { SetProperty(ref _protocols, value); }
-        }
-
         private ObservableCollection<SummaryItem> _allItems;
-
-        private ProtocolViewModel _currentProtocol;
-        public ProtocolViewModel CurrentProtocol
+        private ObservableCollection<SummaryItem> _currentPageItems;
+        public ObservableCollection<SummaryItem> CurrentPageItems
         {
-            get { return _currentProtocol; }
-            set
-            {
-                if (SetProperty(ref _currentProtocol, value))
-                {
-                    UpdateCurrentPage();
-                }
-            }
+            get { return _currentPageItems; }
+            set { SetProperty(ref _currentPageItems, value); }
         }
 
         private int _currentPage;
@@ -113,110 +98,58 @@ namespace summary_list.ViewModels
         public MainViewModel()
         {
             Title = "Summary List";
-            Protocols = new ObservableCollection<ProtocolViewModel>();
             _allItems = new ObservableCollection<SummaryItem>();
+            CurrentPageItems = new ObservableCollection<SummaryItem>();
             
             MoveToNextPageCommand = new RelayCommand(MoveToNextPage);
             MoveToPreviousPageCommand = new RelayCommand(MoveToPreviousPage);
             SaveCurrentPageCommand = new RelayCommand(SaveCurrentPage);
             SaveAllPagesCommand = new RelayCommand(SaveAllPages);
             
-            LoadProtocolData();
-        }
-
-        private void LoadProtocolData()
-        {
-            try
+            // Sample data with simple 3-4 word phrases
+            var dummyTexts = new[]
             {
-                string dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "dummy_data.xml");
-                
-                if (!File.Exists(dataPath))
+                "Red Apple Tree", "Blue Sky View", "Green Grass Field", "Yellow Sun Light",
+                "Black Night Sky", "White Snow Fall", "Purple Flower Garden", "Orange Sunset View",
+                "Brown Wood Table", "Gray Cloud Day", "Pink Rose Petal", "Silver Moon Light",
+                "Gold Star Night", "Rainbow Color Show", "Ocean Wave Sound", "Mountain Top View",
+                "River Flow Path", "Forest Tree Line", "Desert Sand Dune", "Beach Sand Castle",
+                "Spring Morning Dew", "Summer Beach Day", "Autumn Leaf Fall", "Winter Snow Storm",
+                "Morning Coffee Cup", "Evening Tea Time", "Night Star Light", "Day Sun Shine",
+                "City Street View", "Country Road Path", "Mountain Peak Top", "Valley River Flow",
+                "Garden Flower Bed", "Park Bench Seat", "Lake Water Ripple", "Sea Wave Crash",
+                "Forest Tree Shade", "Desert Sand Dune", "Beach Shell Collect", "Mountain Rock Climb",
+                "River Fish Swim", "Lake Duck Float", "Ocean Whale Swim", "Sea Turtle Dive",
+                "Sky Bird Fly", "Cloud Shape Form", "Rain Drop Fall", "Snow Flake Drift",
+                "Wind Leaf Blow", "Storm Cloud Gather", "Sun Ray Shine", "Moon Light Glow",
+                "Star Twinkle Night", "Planet Orbit Path", "Galaxy Star Cluster", "Universe Space Time",
+                "Earth Planet Home", "Mars Red Planet", "Jupiter Gas Giant", "Saturn Ring World",
+                "Mercury Hot Planet", "Venus Cloud World", "Uranus Ice Giant", "Neptune Blue World",
+                "Pluto Dwarf Planet", "Sun Star Center", "Moon Earth Satellite", "Comet Tail Trail",
+                "Asteroid Belt Ring", "Meteor Shower Rain", "Black Hole Gravity", "White Dwarf Star",
+                "Red Giant Star", "Blue Supergiant Star", "Neutron Star Core", "Pulsar Radio Wave",
+                "Quasar Bright Core", "Supernova Explosion", "Nebula Gas Cloud", "Galaxy Spiral Arm",
+                "Milky Way Home", "Andromeda Galaxy", "Triangulum Galaxy", "Large Magellanic Cloud",
+                "Small Magellanic Cloud", "Sombrero Galaxy", "Whirlpool Galaxy", "Pinwheel Galaxy",
+                "Cartwheel Galaxy", "Ring Galaxy", "Barred Spiral Galaxy", "Elliptical Galaxy",
+                "Irregular Galaxy", "Dwarf Galaxy", "Globular Cluster", "Open Cluster",
+                "Star Cluster", "Planetary Nebula", "Dark Nebula", "Emission Nebula",
+                "Reflection Nebula", "Supernova Remnant", "Pulsar Wind Nebula", "Molecular Cloud"
+            };
+
+            var random = new System.Random();
+            foreach (var text in dummyTexts)
+            {
+                _allItems.Add(new SummaryItem
                 {
-                    MessageBox.Show($"Data file not found at: {dataPath}\nPlease ensure the file exists in the correct location.", 
-                                  "Error", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Error);
-                    return;
-                }
-
-                var serializer = new XmlSerializer(typeof(Protocols));
-                using (var reader = new StreamReader(dataPath))
-                {
-                    var protocols = (Protocols)serializer.Deserialize(reader);
-                    
-                    if (protocols == null || protocols.ProtocolList == null || protocols.ProtocolList.Count == 0)
-                    {
-                        MessageBox.Show("Invalid protocol data format. Please check the XML file structure.", 
-                                      "Error", 
-                                      MessageBoxButton.OK, 
-                                      MessageBoxImage.Error);
-                        return;
-                    }
-
-                    Protocols.Clear();
-
-                    foreach (var protocol in protocols.ProtocolList)
-                    {
-                        var protocolViewModel = new ProtocolViewModel
-                        {
-                            Name = protocol.Name,
-                            Groups = new ObservableCollection<GroupViewModel>()
-                        };
-
-                        foreach (var group in protocol.Groups)
-                        {
-                            if (group.Items == null || group.Items.Count == 0)
-                            {
-                                continue;
-                            }
-
-                            var groupViewModel = new GroupViewModel(group.Name)
-                            {
-                                Items = new ObservableCollection<SummaryItem>(group.Items.OrderBy(item => item.Text))
-                            };
-
-                            protocolViewModel.Groups.Add(groupViewModel);
-                        }
-
-                        Protocols.Add(protocolViewModel);
-                    }
-                }
-
-                if (Protocols.Count == 0)
-                {
-                    MessageBox.Show("No valid protocols found in the data.", 
-                                  "Warning", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Warning);
-                    return;
-                }
-
-                CurrentProtocol = Protocols.First();
-                TotalPages = Protocols.Count;
-                CurrentPage = 0;
-                UpdateCurrentPage();
+                    Text = text,
+                    IsChecked = random.Next(2) == 1 // Randomly set checked status
+                });
             }
-            catch (FileNotFoundException)
-            {
-                MessageBox.Show("The data file could not be found. Please ensure the file exists in the correct location.", 
-                              "Error", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
-            catch (InvalidOperationException ex)
-            {
-                MessageBox.Show($"Error deserializing XML data: {ex.Message}\nPlease check the XML file format.", 
-                              "Error", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An unexpected error occurred while loading protocol data: {ex.Message}", 
-                              "Error", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Error);
-            }
+
+            TotalPages = (_allItems.Count + _itemsPerPage - 1) / _itemsPerPage;
+            CurrentPage = 0;
+            UpdateCurrentPage();
         }
 
         private void UpdateItemsPerPage()
@@ -231,13 +164,7 @@ namespace summary_list.ViewModels
             int rowsPerPage = Math.Max(1, availableHeight / (ItemHeight + ItemMargin * 2));
             
             _itemsPerPage = itemsPerRow * rowsPerPage;
-            
-            // Update total pages based on current protocol's items
-            if (CurrentProtocol != null && CurrentProtocol.Groups != null)
-            {
-                int totalItems = CurrentProtocol.Groups.Sum(g => g.Items.Count);
-                TotalPages = (totalItems + _itemsPerPage - 1) / _itemsPerPage;
-            }
+            TotalPages = (_allItems.Count + _itemsPerPage - 1) / _itemsPerPage;
             
             // Update current page to ensure it's within bounds
             if (CurrentPage >= TotalPages)
@@ -250,12 +177,13 @@ namespace summary_list.ViewModels
 
         private void UpdateCurrentPage()
         {
-            if (CurrentProtocol == null || CurrentProtocol.Groups == null)
+            CurrentPageItems.Clear();
+            var startIndex = CurrentPage * _itemsPerPage;
+            var items = _allItems.Skip(startIndex).Take(_itemsPerPage);
+            foreach (var item in items)
             {
-                return;
+                CurrentPageItems.Add(item);
             }
-
-            CurrentProtocol = Protocols[CurrentPage];
         }
 
         private void MoveToNextPage()
@@ -276,97 +204,89 @@ namespace summary_list.ViewModels
 
         private void SaveCurrentPage()
         {
-            double currentY = 0;
-            RenderTargetBitmap bitmap = null;
             try
             {
-                if (CurrentProtocol == null)
-                {
-                    return;
-                }
+                // Calculate how many items can fit in a row
+                int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
+                
+                // Calculate total height needed
+                int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
+                int totalHeight = totalRows * (ItemHeight + ItemMargin * 2) + 50; // 50 for title and bottom margin
 
+                // Ensure the height is at least the control height
+                totalHeight = Math.Max(totalHeight, (int)ControlHeight);
+
+                // Create a visual for the current page
                 var visual = new DrawingVisual();
                 using (var drawingContext = visual.RenderOpen())
                 {
-                    // Draw protocol title
+                    // Create a dark background
+                    drawingContext.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 30, 30)), null, new Rect(0, 0, ControlWidth, totalHeight));
+
+                    // Draw title
                     var titleText = new FormattedText(
-                        CurrentProtocol.Name,
+                        $"Page {CurrentPage + 1}",
                         System.Globalization.CultureInfo.CurrentCulture,
                         FlowDirection.LeftToRight,
                         new Typeface("Arial"),
-                        24,
-                        Brushes.Black,
+                        16,
+                        Brushes.White,
                         96);
                     drawingContext.DrawText(titleText, new Point(10, 10));
 
-                    currentY = 50; // Start after title
-                    foreach (var group in CurrentProtocol.Groups)
+                    // Draw each item
+                    int currentRow = 0;
+                    int currentColumn = 0;
+                    foreach (var item in CurrentPageItems)
                     {
-                        // Draw group separator
-                        var separatorText = new FormattedText(
-                            group.Name,
+                        double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
+                        double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
+
+                        // Draw item background with dark theme color
+                        drawingContext.DrawRectangle(
+                            new SolidColorBrush(Color.FromRgb(45, 45, 45)),
+                            new Pen(new SolidColorBrush(Color.FromRgb(62, 62, 62)), 1),
+                            new Rect(x, y, ItemWidth, ItemHeight));
+
+                        // Draw check symbol and text
+                        var symbolText = new FormattedText(
+                            item.CheckSymbol,
                             System.Globalization.CultureInfo.CurrentCulture,
                             FlowDirection.LeftToRight,
                             new Typeface("Arial"),
-                            18,
-                            Brushes.Black,
+                            20,
+                            item.IsChecked ? Brushes.Green : Brushes.Red,
                             96);
-                        drawingContext.DrawText(separatorText, new Point(10, currentY));
-                        currentY += 30;
+                        drawingContext.DrawText(symbolText, new Point(x + ItemPadding, y + ItemPadding));
 
-                        // Draw items
-                        double x = 10;
-                        foreach (var item in group.Items)
+                        var itemText = new FormattedText(
+                            item.Text,
+                            System.Globalization.CultureInfo.CurrentCulture,
+                            FlowDirection.LeftToRight,
+                            new Typeface("Arial"),
+                            12,
+                            Brushes.White,
+                            96);
+                        drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
+
+                        currentColumn++;
+                        if (currentColumn >= itemsPerRow)
                         {
-                            if (x + ItemWidth > 800) // Page width
-                            {
-                                x = 10;
-                                currentY += ItemHeight + ItemMargin;
-                            }
-
-                            // Draw item background
-                            drawingContext.DrawRectangle(
-                                new SolidColorBrush(item.IsChecked ? Colors.LightGreen : Colors.White),
-                                new Pen(Brushes.Black, 1),
-                                new Rect(x, currentY, ItemWidth, ItemHeight));
-
-                            // Draw check symbol
-                            var symbolText = new FormattedText(
-                                item.CheckSymbol,
-                                System.Globalization.CultureInfo.CurrentCulture,
-                                FlowDirection.LeftToRight,
-                                new Typeface("Arial"),
-                                20,
-                                Brushes.Black,
-                                96);
-                            drawingContext.DrawText(symbolText, new Point(x + 5, currentY + 5));
-
-                            // Draw item text
-                            var itemText = new FormattedText(
-                                item.Text,
-                                System.Globalization.CultureInfo.CurrentCulture,
-                                FlowDirection.LeftToRight,
-                                new Typeface("Arial"),
-                                12,
-                                Brushes.Black,
-                                96);
-                            drawingContext.DrawText(itemText, new Point(x + 30, currentY + 10));
-
-                            x += ItemWidth + ItemMargin;
+                            currentColumn = 0;
+                            currentRow++;
                         }
-                        currentY += ItemHeight + ItemMargin + 20; // Add extra space after group
                     }
                 }
 
-                // Create bitmap
-                bitmap = new RenderTargetBitmap(800, (int)currentY + 20, 96, 96, PixelFormats.Pbgra32);
+                // Create a bitmap
+                var bitmap = new RenderTargetBitmap((int)ControlWidth, totalHeight, 96, 96, PixelFormats.Pbgra32);
                 bitmap.Render(visual);
 
-                // Save bitmap
+                // Save the bitmap to a file
                 var encoder = new BmpBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(bitmap));
 
-                var fileName = $"{CurrentProtocol.Name.Replace(" ", "_")}.bmp";
+                var fileName = $"{Guid.NewGuid()}.bmp";
                 using (var stream = File.Create(fileName))
                 {
                     encoder.Save(stream);
@@ -378,25 +298,117 @@ namespace summary_list.ViewModels
             {
                 MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                if (bitmap != null)
-                {
-                    bitmap.Freeze();
-                }
-            }
         }
 
         private void SaveAllPages()
         {
             try
             {
-                foreach (var protocol in Protocols)
+                int originalPage = CurrentPage;
+                var savedFiles = new List<string>();
+
+                // Save each page
+                for (int i = 0; i < TotalPages; i++)
                 {
-                    CurrentProtocol = protocol;
-                    SaveCurrentPage();
+                    CurrentPage = i;
+                    UpdateCurrentPage();
+
+                    // Calculate how many items can fit in a row
+                    int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
+                    
+                    // Calculate total height needed
+                    int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
+                    int totalHeight = totalRows * (ItemHeight + ItemMargin * 2) + 50; // 50 for title and bottom margin
+
+                    // Ensure the height is at least the control height
+                    totalHeight = Math.Max(totalHeight, (int)ControlHeight);
+
+                    // Create a visual for the current page
+                    var visual = new DrawingVisual();
+                    using (var drawingContext = visual.RenderOpen())
+                    {
+                        // Create a dark background
+                        drawingContext.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 30, 30)), null, new Rect(0, 0, ControlWidth, totalHeight));
+
+                        // Draw title
+                        var titleText = new FormattedText(
+                            $"Page {CurrentPage + 1} of {TotalPages}",
+                            System.Globalization.CultureInfo.CurrentCulture,
+                            FlowDirection.LeftToRight,
+                            new Typeface("Arial"),
+                            16,
+                            Brushes.White,
+                            96);
+                        drawingContext.DrawText(titleText, new Point(10, 10));
+
+                        // Draw each item
+                        int currentRow = 0;
+                        int currentColumn = 0;
+                        foreach (var item in CurrentPageItems)
+                        {
+                            double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
+                            double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
+
+                            // Draw item background with dark theme color
+                            drawingContext.DrawRectangle(
+                                new SolidColorBrush(Color.FromRgb(45, 45, 45)),
+                                new Pen(new SolidColorBrush(Color.FromRgb(62, 62, 62)), 1),
+                                new Rect(x, y, ItemWidth, ItemHeight));
+
+                            // Draw check symbol and text
+                            var symbolText = new FormattedText(
+                                item.CheckSymbol,
+                                System.Globalization.CultureInfo.CurrentCulture,
+                                FlowDirection.LeftToRight,
+                                new Typeface("Arial"),
+                                20,
+                                item.IsChecked ? Brushes.Green : Brushes.Red,
+                                96);
+                            drawingContext.DrawText(symbolText, new Point(x + ItemPadding, y + ItemPadding));
+
+                            var itemText = new FormattedText(
+                                item.Text,
+                                System.Globalization.CultureInfo.CurrentCulture,
+                                FlowDirection.LeftToRight,
+                                new Typeface("Arial"),
+                                12,
+                                Brushes.White,
+                                96);
+                            drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
+
+                            currentColumn++;
+                            if (currentColumn >= itemsPerRow)
+                            {
+                                currentColumn = 0;
+                                currentRow++;
+                            }
+                        }
+                    }
+
+                    // Create a bitmap
+                    var bitmap = new RenderTargetBitmap((int)ControlWidth, totalHeight, 96, 96, PixelFormats.Pbgra32);
+                    bitmap.Render(visual);
+
+                    // Save the bitmap to a file
+                    var encoder = new BmpBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+                    var fileName = $"Page_{i + 1}_{Guid.NewGuid()}.bmp";
+                    using (var stream = File.Create(fileName))
+                    {
+                        encoder.Save(stream);
+                    }
+                    savedFiles.Add(fileName);
                 }
-                MessageBox.Show("All pages saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Restore original page
+                CurrentPage = originalPage;
+                UpdateCurrentPage();
+
+                MessageBox.Show($"Saved {TotalPages} files:\n{string.Join("\n", savedFiles)}", 
+                              "Success", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

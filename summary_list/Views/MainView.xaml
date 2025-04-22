@@ -12,7 +12,7 @@
         <converters:WidthToColumnsConverter x:Key="WidthToColumnsConverter"/>
         <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
     </UserControl.Resources>
-    <Grid>
+    <Grid Background="#FF1E1E1E">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -23,7 +23,8 @@
                    Text="{Binding Title}" 
                    FontSize="16" 
                    FontWeight="Bold" 
-                   Margin="10"/>
+                   Margin="10"
+                   Foreground="White"/>
         
         <ItemsControl Grid.Row="1" 
                       ItemsSource="{Binding CurrentPageItems}"
@@ -38,7 +39,7 @@
                     <Border Width="200" 
                             Height="40" 
                             Margin="5" 
-                            BorderBrush="Gray" 
+                            BorderBrush="#FF3E3E3E" 
                             BorderThickness="1"
                             Background="{Binding IsChecked, Converter={StaticResource BoolToColorConverter}}">
                         <Grid>
@@ -50,19 +51,20 @@
                                        Text="{Binding CheckSymbol}" 
                                        FontSize="20" 
                                        Margin="10,0,0,0"
-                                       Foreground="{Binding IsChecked, Converter={StaticResource BoolToColorConverter}}"/>
+                                       Foreground="{Binding IsChecked, Converter={StaticResource CheckToColorConverter}}"/>
                             <TextBlock Grid.Column="1" 
                                        Text="{Binding Text}" 
                                        FontSize="12" 
                                        Margin="10,0,0,0"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       Foreground="White"/>
                         </Grid>
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <Grid Grid.Row="2" Margin="10">
+        <Grid Grid.Row="2" Margin="10" Background="#FF2D2D2D">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -75,30 +77,43 @@
                     Content="Previous" 
                     Width="70" 
                     Height="30" 
-                    Command="{Binding MoveToPreviousPageCommand}"/>
+                    Command="{Binding MoveToPreviousPageCommand}"
+                    Background="#FF3E3E3E"
+                    BorderBrush="#FF3E3E3E"
+                    Foreground="White"/>
             
             <TextBlock Grid.Column="1" 
                        Text="{Binding PageInfo}" 
                        HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"/>
+                       VerticalAlignment="Center"
+                       Foreground="White"/>
             
             <Button Grid.Column="2" 
                     Content="Next" 
                     Width="60" 
                     Height="30" 
-                    Command="{Binding MoveToNextPageCommand}"/>
+                    Command="{Binding MoveToNextPageCommand}"
+                    Background="#FF3E3E3E"
+                    BorderBrush="#FF3E3E3E"
+                    Foreground="White"/>
 
             <Button Grid.Column="3" 
                     Content="Save" 
                     Width="60" 
                     Height="30" 
-                    Command="{Binding SaveCurrentPageCommand}"/>
+                    Command="{Binding SaveCurrentPageCommand}"
+                    Background="#FF3E3E3E"
+                    BorderBrush="#FF3E3E3E"
+                    Foreground="White"/>
 
             <Button Grid.Column="4" 
                     Content="Save All" 
                     Width="70" 
                     Height="30" 
-                    Command="{Binding SaveAllPagesCommand}"/>
+                    Command="{Binding SaveAllPagesCommand}"
+                    Background="#FF3E3E3E"
+                    BorderBrush="#FF3E3E3E"
+                    Foreground="White"/>
         </Grid>
     </Grid>
 </UserControl> 

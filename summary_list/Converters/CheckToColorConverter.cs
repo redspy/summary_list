@@ -11,9 +11,9 @@ namespace summary_list.Converters
         {
             if (value is bool isChecked)
             {
-                return isChecked ? new SolidColorBrush(Colors.LightGreen) : new SolidColorBrush(Colors.LightPink);
+                return isChecked ? Brushes.Green : Brushes.Red;
             }
-            return new SolidColorBrush(Colors.White);
+            return Brushes.White;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

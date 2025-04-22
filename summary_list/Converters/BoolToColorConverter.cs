@@ -9,11 +9,7 @@ namespace summary_list.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool isChecked)
-            {
-                return isChecked ? Brushes.LightGreen : Brushes.White;
-            }
-            return Brushes.White;
+            return new SolidColorBrush(Color.FromRgb(45, 45, 45));
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

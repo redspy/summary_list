@@ -220,8 +220,8 @@ namespace summary_list.ViewModels
                 var visual = new DrawingVisual();
                 using (var drawingContext = visual.RenderOpen())
                 {
-                    // Create a white background
-                    drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, ControlWidth, totalHeight));
+                    // Create a dark background
+                    drawingContext.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 30, 30)), null, new Rect(0, 0, ControlWidth, totalHeight));
 
                     // Draw title
                     var titleText = new FormattedText(
@@ -230,7 +230,7 @@ namespace summary_list.ViewModels
                         FlowDirection.LeftToRight,
                         new Typeface("Arial"),
                         16,
-                        Brushes.Black,
+                        Brushes.White,
                         96);
                     drawingContext.DrawText(titleText, new Point(10, 10));
 
@@ -242,10 +242,10 @@ namespace summary_list.ViewModels
                         double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
                         double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
 
-                        // Draw item background
+                        // Draw item background with dark theme color
                         drawingContext.DrawRectangle(
-                            item.IsChecked ? Brushes.LightGreen : Brushes.LightPink,
-                            new Pen(Brushes.Gray, 1),
+                            new SolidColorBrush(Color.FromRgb(45, 45, 45)),
+                            new Pen(new SolidColorBrush(Color.FromRgb(62, 62, 62)), 1),
                             new Rect(x, y, ItemWidth, ItemHeight));
 
                         // Draw check symbol and text
@@ -265,7 +265,7 @@ namespace summary_list.ViewModels
                             FlowDirection.LeftToRight,
                             new Typeface("Arial"),
                             12,
-                            Brushes.Black,
+                            Brushes.White,
                             96);
                         drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
 
@@ -327,8 +327,8 @@ namespace summary_list.ViewModels
                     var visual = new DrawingVisual();
                     using (var drawingContext = visual.RenderOpen())
                     {
-                        // Create a white background
-                        drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, ControlWidth, totalHeight));
+                        // Create a dark background
+                        drawingContext.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 30, 30)), null, new Rect(0, 0, ControlWidth, totalHeight));
 
                         // Draw title
                         var titleText = new FormattedText(
@@ -337,7 +337,7 @@ namespace summary_list.ViewModels
                             FlowDirection.LeftToRight,
                             new Typeface("Arial"),
                             16,
-                            Brushes.Black,
+                            Brushes.White,
                             96);
                         drawingContext.DrawText(titleText, new Point(10, 10));
 
@@ -349,10 +349,10 @@ namespace summary_list.ViewModels
                             double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
                             double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
 
-                            // Draw item background
+                            // Draw item background with dark theme color
                             drawingContext.DrawRectangle(
-                                item.IsChecked ? Brushes.LightGreen : Brushes.LightPink,
-                                new Pen(Brushes.Gray, 1),
+                                new SolidColorBrush(Color.FromRgb(45, 45, 45)),
+                                new Pen(new SolidColorBrush(Color.FromRgb(62, 62, 62)), 1),
                                 new Rect(x, y, ItemWidth, ItemHeight));
 
                             // Draw check symbol and text
@@ -372,7 +372,7 @@ namespace summary_list.ViewModels
                                 FlowDirection.LeftToRight,
                                 new Typeface("Arial"),
                                 12,
-                                Brushes.Black,
+                                Brushes.White,
                                 96);
                             drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
 

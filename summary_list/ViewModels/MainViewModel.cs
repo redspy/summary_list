@@ -166,8 +166,9 @@ namespace summary_list.ViewModels
             int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
             
             // Calculate how many rows can fit in the available height
+            // Account for title (24px + 10px margin), bottom controls (30px + 10px margin), and group headers (20px + 25px margin)
             int availableHeight = (int)ControlHeight - 100; // 100 for title and bottom controls
-            int rowsPerPage = Math.Max(1, availableHeight / (ItemHeight + ItemMargin * 2));
+            int rowsPerPage = Math.Max(1, (availableHeight - 45) / (ItemHeight + ItemMargin * 2)); // 45 for group header height and margins
             
             _itemsPerPage = itemsPerRow * rowsPerPage;
             TotalPages = (_allItems.Count + _itemsPerPage - 1) / _itemsPerPage;

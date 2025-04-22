@@ -9,6 +9,9 @@ using System.IO;
 using System.Windows;
 using System;
 using System.Collections.Generic;
+using System.Windows.Data;
+using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace summary_list.ViewModels
 {
@@ -28,11 +31,11 @@ namespace summary_list.ViewModels
         }
 
         private ObservableCollection<SummaryItem> _allItems;
-        private ObservableCollection<SummaryItem> _currentPageItems;
-        public ObservableCollection<SummaryItem> CurrentPageItems
+        private CollectionViewSource _currentPageItemsView;
+        public CollectionViewSource CurrentPageItemsView
         {
-            get { return _currentPageItems; }
-            set { SetProperty(ref _currentPageItems, value); }
+            get { return _currentPageItemsView; }
+            set { SetProperty(ref _currentPageItemsView, value); }
         }
 
         private int _currentPage;
@@ -99,7 +102,9 @@ namespace summary_list.ViewModels
         {
             Title = "Summary List";
             _allItems = new ObservableCollection<SummaryItem>();
-            CurrentPageItems = new ObservableCollection<SummaryItem>();
+            _currentPageItemsView = new CollectionViewSource();
+            _currentPageItemsView.Source = new ObservableCollection<SummaryItem>();
+            _currentPageItemsView.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             
             MoveToNextPageCommand = new RelayCommand(MoveToNextPage);
             MoveToPreviousPageCommand = new RelayCommand(MoveToPreviousPage);
@@ -138,11 +143,12 @@ namespace summary_list.ViewModels
             };
 
             var random = new System.Random();
-            foreach (var text in dummyTexts)
+            for (int i = 0; i < dummyTexts.Length; i++)
             {
                 _allItems.Add(new SummaryItem
                 {
-                    Text = text,
+                    Text = dummyTexts[i],
+                    Group = i < dummyTexts.Length / 2 ? "Group One" : "Group Two",
                     IsChecked = random.Next(2) == 1 // Randomly set checked status
                 });
             }
@@ -177,13 +183,14 @@ namespace summary_list.ViewModels
 
         private void UpdateCurrentPage()
         {
-            CurrentPageItems.Clear();
+            var currentPageItems = new ObservableCollection<SummaryItem>();
             var startIndex = CurrentPage * _itemsPerPage;
             var items = _allItems.Skip(startIndex).Take(_itemsPerPage);
             foreach (var item in items)
             {
-                CurrentPageItems.Add(item);
+                currentPageItems.Add(item);
             }
+            _currentPageItemsView.Source = currentPageItems;
         }
 
         private void MoveToNextPage()
@@ -206,81 +213,28 @@ namespace summary_list.ViewModels
         {
             try
             {
-                // Calculate how many items can fit in a row
-                int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
-                
-                // Calculate total height needed
-                int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
-                int totalHeight = totalRows * (ItemHeight + ItemMargin * 2) + 50; // 50 for title and bottom margin
+                // Get the main window
+                var mainWindow = Application.Current.MainWindow;
+                if (mainWindow == null) return;
 
-                // Ensure the height is at least the control height
-                totalHeight = Math.Max(totalHeight, (int)ControlHeight);
+                // Find the MainView control
+                var mainView = FindVisualChild<Views.MainView>(mainWindow);
+                if (mainView == null) return;
 
-                // Create a visual for the current page
-                var visual = new DrawingVisual();
-                using (var drawingContext = visual.RenderOpen())
-                {
-                    // Create a dark background
-                    drawingContext.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 30, 30)), null, new Rect(0, 0, ControlWidth, totalHeight));
+                // Find the ItemsControl in MainView
+                var mainItemsControl = FindVisualChild<ItemsControl>(mainView);
+                if (mainItemsControl == null) return;
 
-                    // Draw title
-                    var titleText = new FormattedText(
-                        $"Page {CurrentPage + 1}",
-                        System.Globalization.CultureInfo.CurrentCulture,
-                        FlowDirection.LeftToRight,
-                        new Typeface("Arial"),
-                        16,
-                        Brushes.White,
-                        96);
-                    drawingContext.DrawText(titleText, new Point(10, 10));
+                // Create a bitmap of the control
+                var bitmap = new RenderTargetBitmap(
+                    (int)mainItemsControl.ActualWidth,
+                    (int)mainItemsControl.ActualHeight,
+                    96,
+                    96,
+                    PixelFormats.Pbgra32);
 
-                    // Draw each item
-                    int currentRow = 0;
-                    int currentColumn = 0;
-                    foreach (var item in CurrentPageItems)
-                    {
-                        double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
-                        double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
-
-                        // Draw item background with dark theme color
-                        drawingContext.DrawRectangle(
-                            new SolidColorBrush(Color.FromRgb(45, 45, 45)),
-                            new Pen(new SolidColorBrush(Color.FromRgb(62, 62, 62)), 1),
-                            new Rect(x, y, ItemWidth, ItemHeight));
-
-                        // Draw check symbol and text
-                        var symbolText = new FormattedText(
-                            item.CheckSymbol,
-                            System.Globalization.CultureInfo.CurrentCulture,
-                            FlowDirection.LeftToRight,
-                            new Typeface("Arial"),
-                            20,
-                            item.IsChecked ? Brushes.Green : Brushes.Red,
-                            96);
-                        drawingContext.DrawText(symbolText, new Point(x + ItemPadding, y + ItemPadding));
-
-                        var itemText = new FormattedText(
-                            item.Text,
-                            System.Globalization.CultureInfo.CurrentCulture,
-                            FlowDirection.LeftToRight,
-                            new Typeface("Arial"),
-                            12,
-                            Brushes.White,
-                            96);
-                        drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
-
-                        currentColumn++;
-                        if (currentColumn >= itemsPerRow)
-                        {
-                            currentColumn = 0;
-                            currentRow++;
-                        }
-                    }
-                }
-
-                // Create a bitmap
-                var bitmap = new RenderTargetBitmap((int)ControlWidth, totalHeight, 96, 96, PixelFormats.Pbgra32);
-                bitmap.Render(visual);
+                // Render the control directly
+                bitmap.Render(mainItemsControl);
 
                 // Save the bitmap to a file
                 var encoder = new BmpBitmapEncoder();
@@ -307,87 +261,38 @@ namespace summary_list.ViewModels
                 int originalPage = CurrentPage;
                 var savedFiles = new List<string>();
 
+                // Get the main window
+                var mainWindow = Application.Current.MainWindow;
+                if (mainWindow == null) return;
+
+                // Find the MainView control
+                var mainView = FindVisualChild<Views.MainView>(mainWindow);
+                if (mainView == null) return;
+
+                // Find the ItemsControl in MainView
+                var mainItemsControl = FindVisualChild<ItemsControl>(mainView);
+                if (mainItemsControl == null) return;
+
                 // Save each page
                 for (int i = 0; i < TotalPages; i++)
                 {
+                    // Navigate to the page
                     CurrentPage = i;
                     UpdateCurrentPage();
 
-                    // Calculate how many items can fit in a row
-                    int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
-                    
-                    // Calculate total height needed
-                    int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
-                    int totalHeight = totalRows * (ItemHeight + ItemMargin * 2) + 50; // 50 for title and bottom margin
+                    // Wait for the UI to update
+                    Application.Current.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
 
-                    // Ensure the height is at least the control height
-                    totalHeight = Math.Max(totalHeight, (int)ControlHeight);
+                    // Create a bitmap of the control
+                    var bitmap = new RenderTargetBitmap(
+                        (int)mainItemsControl.ActualWidth,
+                        (int)mainItemsControl.ActualHeight,
+                        96,
+                        96,
+                        PixelFormats.Pbgra32);
 
-                    // Create a visual for the current page
-                    var visual = new DrawingVisual();
-                    using (var drawingContext = visual.RenderOpen())
-                    {
-                        // Create a dark background
-                        drawingContext.DrawRectangle(new SolidColorBrush(Color.FromRgb(30, 30, 30)), null, new Rect(0, 0, ControlWidth, totalHeight));
-
-                        // Draw title
-                        var titleText = new FormattedText(
-                            $"Page {CurrentPage + 1} of {TotalPages}",
-                            System.Globalization.CultureInfo.CurrentCulture,
-                            FlowDirection.LeftToRight,
-                            new Typeface("Arial"),
-                            16,
-                            Brushes.White,
-                            96);
-                        drawingContext.DrawText(titleText, new Point(10, 10));
-
-                        // Draw each item
-                        int currentRow = 0;
-                        int currentColumn = 0;
-                        foreach (var item in CurrentPageItems)
-                        {
-                            double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
-                            double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
-
-                            // Draw item background with dark theme color
-                            drawingContext.DrawRectangle(
-                                new SolidColorBrush(Color.FromRgb(45, 45, 45)),
-                                new Pen(new SolidColorBrush(Color.FromRgb(62, 62, 62)), 1),
-                                new Rect(x, y, ItemWidth, ItemHeight));
-
-                            // Draw check symbol and text
-                            var symbolText = new FormattedText(
-                                item.CheckSymbol,
-                                System.Globalization.CultureInfo.CurrentCulture,
-                                FlowDirection.LeftToRight,
-                                new Typeface("Arial"),
-                                20,
-                                item.IsChecked ? Brushes.Green : Brushes.Red,
-                                96);
-                            drawingContext.DrawText(symbolText, new Point(x + ItemPadding, y + ItemPadding));
-
-                            var itemText = new FormattedText(
-                                item.Text,
-                                System.Globalization.CultureInfo.CurrentCulture,
-                                FlowDirection.LeftToRight,
-                                new Typeface("Arial"),
-                                12,
-                                Brushes.White,
-                                96);
-                            drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
-
-                            currentColumn++;
-                            if (currentColumn >= itemsPerRow)
-                            {
-                                currentColumn = 0;
-                                currentRow++;
-                            }
-                        }
-                    }
-
-                    // Create a bitmap
-                    var bitmap = new RenderTargetBitmap((int)ControlWidth, totalHeight, 96, 96, PixelFormats.Pbgra32);
-                    bitmap.Render(visual);
+                    // Render the control directly
+                    bitmap.Render(mainItemsControl);
 
                     // Save the bitmap to a file
                     var encoder = new BmpBitmapEncoder();
@@ -414,6 +319,25 @@ namespace summary_list.ViewModels
             {
                 MessageBox.Show($"Error saving files: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild)
+                {
+                    return typedChild;
+                }
+
+                var result = FindVisualChild<T>(child);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+            return null;
         }
     }
 } 

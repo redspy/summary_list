@@ -15,6 +15,17 @@ namespace summary_list.Models
             }
         }
 
+        private string _group;
+        public string Group
+        {
+            get { return _group; }
+            set
+            {
+                _group = value;
+                OnPropertyChanged(nameof(Group));
+            }
+        }
+
         private bool _isChecked;
         public bool IsChecked
         {

@@ -15,6 +15,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
         <TextBlock Text="{Binding Title}" 
@@ -24,7 +25,7 @@
                    HorizontalAlignment="Center"/>
         
         <ItemsControl Grid.Row="1" 
-                     ItemsSource="{Binding Items}"
+                     ItemsSource="{Binding CurrentPageItems}"
                      Margin="10">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -37,6 +38,8 @@
                             BorderThickness="1" 
                             Margin="5" 
                             Padding="10"
+                            Width="200"
+                            Height="40"
                             Background="{Binding IsChecked, Converter={StaticResource CheckToColorConverter}}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding CheckSymbol}" 
@@ -52,5 +55,29 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <Grid Grid.Row="2" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Content="&lt;" 
+                    Width="30"
+                    Height="30"
+                    Command="{Binding MoveToPreviousPageCommand}"/>
+            
+            <TextBlock Text="{Binding PageInfo}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Grid.Column="1"/>
+            
+            <Button Content="&gt;" 
+                    Width="30"
+                    Height="30"
+                    Grid.Column="2"
+                    Command="{Binding MoveToNextPageCommand}"/>
+        </Grid>
     </Grid>
 </UserControl> 

@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using System.Windows;
 using System;
+using System.Collections.Generic;
 
 namespace summary_list.ViewModels
 {
@@ -64,6 +65,21 @@ namespace summary_list.ViewModels
         public ICommand MoveToNextPageCommand { get; }
         public ICommand MoveToPreviousPageCommand { get; }
         public ICommand SaveCurrentPageCommand { get; }
+        public ICommand SaveAllPagesCommand { get; }
+
+        private double _controlWidth = 800;
+        public double ControlWidth
+        {
+            get { return _controlWidth; }
+            set { SetProperty(ref _controlWidth, value); }
+        }
+
+        private double _controlHeight = 450;
+        public double ControlHeight
+        {
+            get { return _controlHeight; }
+            set { SetProperty(ref _controlHeight, value); }
+        }
 
         public MainViewModel()
         {
@@ -74,6 +90,7 @@ namespace summary_list.ViewModels
             MoveToNextPageCommand = new RelayCommand(MoveToNextPage);
             MoveToPreviousPageCommand = new RelayCommand(MoveToPreviousPage);
             SaveCurrentPageCommand = new RelayCommand(SaveCurrentPage);
+            SaveAllPagesCommand = new RelayCommand(SaveAllPages);
             
             // Sample data with simple 3-4 word phrases
             var dummyTexts = new[]
@@ -158,19 +175,22 @@ namespace summary_list.ViewModels
                 const int padding = 10;
 
                 // Calculate how many items can fit in a row
-                int itemsPerRow = (int)(800 / (itemWidth + margin * 2));
+                int itemsPerRow = (int)(ControlWidth / (itemWidth + margin * 2));
                 if (itemsPerRow < 1) itemsPerRow = 1;
 
                 // Calculate total height needed
                 int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
                 int totalHeight = totalRows * (itemHeight + margin * 2) + 50; // 50 for title and bottom margin
 
+                // Ensure the height is at least the control height
+                totalHeight = Math.Max(totalHeight, (int)ControlHeight);
+
                 // Create a visual for the current page
                 var visual = new DrawingVisual();
                 using (var drawingContext = visual.RenderOpen())
                 {
                     // Create a white background
-                    drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, 800, totalHeight));
+                    drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, ControlWidth, totalHeight));
 
                     // Draw title
                     var titleText = new FormattedText(
@@ -228,7 +248,7 @@ namespace summary_list.ViewModels
                 }
 
                 // Create a bitmap
-                var bitmap = new RenderTargetBitmap(800, totalHeight, 96, 96, PixelFormats.Pbgra32);
+                var bitmap = new RenderTargetBitmap((int)ControlWidth, totalHeight, 96, 96, PixelFormats.Pbgra32);
                 bitmap.Render(visual);
 
                 // Save the bitmap to a file
@@ -246,6 +266,128 @@ namespace summary_list.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SaveAllPages()
+        {
+            try
+            {
+                int originalPage = CurrentPage;
+                var savedFiles = new List<string>();
+
+                // Save each page
+                for (int i = 0; i < TotalPages; i++)
+                {
+                    CurrentPage = i;
+                    UpdateCurrentPage();
+
+                    const int itemWidth = 200;
+                    const int itemHeight = 40;
+                    const int margin = 5;
+                    const int padding = 10;
+
+                    // Calculate how many items can fit in a row
+                    int itemsPerRow = (int)(ControlWidth / (itemWidth + margin * 2));
+                    if (itemsPerRow < 1) itemsPerRow = 1;
+
+                    // Calculate total height needed
+                    int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
+                    int totalHeight = totalRows * (itemHeight + margin * 2) + 50; // 50 for title and bottom margin
+
+                    // Ensure the height is at least the control height
+                    totalHeight = Math.Max(totalHeight, (int)ControlHeight);
+
+                    // Create a visual for the current page
+                    var visual = new DrawingVisual();
+                    using (var drawingContext = visual.RenderOpen())
+                    {
+                        // Create a white background
+                        drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, ControlWidth, totalHeight));
+
+                        // Draw title
+                        var titleText = new FormattedText(
+                            $"Page {CurrentPage + 1} of {TotalPages}",
+                            System.Globalization.CultureInfo.CurrentCulture,
+                            FlowDirection.LeftToRight,
+                            new Typeface("Arial"),
+                            16,
+                            Brushes.Black,
+                            96);
+                        drawingContext.DrawText(titleText, new Point(10, 10));
+
+                        // Draw each item
+                        int currentRow = 0;
+                        int currentColumn = 0;
+                        foreach (var item in CurrentPageItems)
+                        {
+                            double x = currentColumn * (itemWidth + margin * 2) + margin;
+                            double y = currentRow * (itemHeight + margin * 2) + 40; // 40 for title and top margin
+
+                            // Draw item background
+                            drawingContext.DrawRectangle(
+                                item.IsChecked ? Brushes.LightGreen : Brushes.LightPink,
+                                new Pen(Brushes.Gray, 1),
+                                new Rect(x, y, itemWidth, itemHeight));
+
+                            // Draw check symbol and text
+                            var symbolText = new FormattedText(
+                                item.CheckSymbol,
+                                System.Globalization.CultureInfo.CurrentCulture,
+                                FlowDirection.LeftToRight,
+                                new Typeface("Arial"),
+                                20,
+                                item.IsChecked ? Brushes.Green : Brushes.Red,
+                                96);
+                            drawingContext.DrawText(symbolText, new Point(x + padding, y + padding));
+
+                            var itemText = new FormattedText(
+                                item.Text,
+                                System.Globalization.CultureInfo.CurrentCulture,
+                                FlowDirection.LeftToRight,
+                                new Typeface("Arial"),
+                                12,
+                                Brushes.Black,
+                                96);
+                            drawingContext.DrawText(itemText, new Point(x + padding + 30, y + padding + 4));
+
+                            currentColumn++;
+                            if (currentColumn >= itemsPerRow)
+                            {
+                                currentColumn = 0;
+                                currentRow++;
+                            }
+                        }
+                    }
+
+                    // Create a bitmap
+                    var bitmap = new RenderTargetBitmap((int)ControlWidth, totalHeight, 96, 96, PixelFormats.Pbgra32);
+                    bitmap.Render(visual);
+
+                    // Save the bitmap to a file
+                    var encoder = new BmpBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+                    var fileName = $"Page_{i + 1}_{Guid.NewGuid()}.bmp";
+                    using (var stream = File.Create(fileName))
+                    {
+                        encoder.Save(stream);
+                    }
+                    savedFiles.Add(fileName);
+                }
+
+                // Restore original page
+                CurrentPage = originalPage;
+                UpdateCurrentPage();
+
+                MessageBox.Show($"Saved {TotalPages} files:\n{string.Join("\n", savedFiles)}", 
+                              "Success", 
+                              MessageBoxButton.OK, 
+                              MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving files: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

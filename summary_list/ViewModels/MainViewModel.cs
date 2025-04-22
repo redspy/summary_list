@@ -16,7 +16,9 @@ namespace summary_list.ViewModels
     {
         private const int ItemWidth = 200;
         private const int ItemHeight = 40;
-        private const int ItemsPerPage = 20;
+        private const int ItemMargin = 5;
+        private const int ItemPadding = 10;
+        private int _itemsPerPage = 20;
 
         private string _title;
         public string Title
@@ -71,14 +73,26 @@ namespace summary_list.ViewModels
         public double ControlWidth
         {
             get { return _controlWidth; }
-            set { SetProperty(ref _controlWidth, value); }
+            set 
+            { 
+                if (SetProperty(ref _controlWidth, value))
+                {
+                    UpdateItemsPerPage();
+                }
+            }
         }
 
         private double _controlHeight = 450;
         public double ControlHeight
         {
             get { return _controlHeight; }
-            set { SetProperty(ref _controlHeight, value); }
+            set 
+            { 
+                if (SetProperty(ref _controlHeight, value))
+                {
+                    UpdateItemsPerPage();
+                }
+            }
         }
 
         public MainViewModel()
@@ -133,16 +147,39 @@ namespace summary_list.ViewModels
                 });
             }
 
-            TotalPages = (_allItems.Count + ItemsPerPage - 1) / ItemsPerPage;
+            TotalPages = (_allItems.Count + _itemsPerPage - 1) / _itemsPerPage;
             CurrentPage = 0;
+            UpdateCurrentPage();
+        }
+
+        private void UpdateItemsPerPage()
+        {
+            if (ControlWidth <= 0 || ControlHeight <= 0) return;
+
+            // Calculate how many items can fit in a row
+            int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
+            
+            // Calculate how many rows can fit in the available height
+            int availableHeight = (int)ControlHeight - 100; // 100 for title and bottom controls
+            int rowsPerPage = Math.Max(1, availableHeight / (ItemHeight + ItemMargin * 2));
+            
+            _itemsPerPage = itemsPerRow * rowsPerPage;
+            TotalPages = (_allItems.Count + _itemsPerPage - 1) / _itemsPerPage;
+            
+            // Update current page to ensure it's within bounds
+            if (CurrentPage >= TotalPages)
+            {
+                CurrentPage = Math.Max(0, TotalPages - 1);
+            }
+            
             UpdateCurrentPage();
         }
 
         private void UpdateCurrentPage()
         {
             CurrentPageItems.Clear();
-            var startIndex = CurrentPage * ItemsPerPage;
-            var items = _allItems.Skip(startIndex).Take(ItemsPerPage);
+            var startIndex = CurrentPage * _itemsPerPage;
+            var items = _allItems.Skip(startIndex).Take(_itemsPerPage);
             foreach (var item in items)
             {
                 CurrentPageItems.Add(item);
@@ -169,18 +206,12 @@ namespace summary_list.ViewModels
         {
             try
             {
-                const int itemWidth = 200;
-                const int itemHeight = 40;
-                const int margin = 5;
-                const int padding = 10;
-
                 // Calculate how many items can fit in a row
-                int itemsPerRow = (int)(ControlWidth / (itemWidth + margin * 2));
-                if (itemsPerRow < 1) itemsPerRow = 1;
-
+                int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
+                
                 // Calculate total height needed
                 int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
-                int totalHeight = totalRows * (itemHeight + margin * 2) + 50; // 50 for title and bottom margin
+                int totalHeight = totalRows * (ItemHeight + ItemMargin * 2) + 50; // 50 for title and bottom margin
 
                 // Ensure the height is at least the control height
                 totalHeight = Math.Max(totalHeight, (int)ControlHeight);
@@ -208,14 +239,14 @@ namespace summary_list.ViewModels
                     int currentColumn = 0;
                     foreach (var item in CurrentPageItems)
                     {
-                        double x = currentColumn * (itemWidth + margin * 2) + margin;
-                        double y = currentRow * (itemHeight + margin * 2) + 40; // 40 for title and top margin
+                        double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
+                        double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
 
                         // Draw item background
                         drawingContext.DrawRectangle(
                             item.IsChecked ? Brushes.LightGreen : Brushes.LightPink,
                             new Pen(Brushes.Gray, 1),
-                            new Rect(x, y, itemWidth, itemHeight));
+                            new Rect(x, y, ItemWidth, ItemHeight));
 
                         // Draw check symbol and text
                         var symbolText = new FormattedText(
@@ -226,7 +257,7 @@ namespace summary_list.ViewModels
                             20,
                             item.IsChecked ? Brushes.Green : Brushes.Red,
                             96);
-                        drawingContext.DrawText(symbolText, new Point(x + padding, y + padding));
+                        drawingContext.DrawText(symbolText, new Point(x + ItemPadding, y + ItemPadding));
 
                         var itemText = new FormattedText(
                             item.Text,
@@ -236,7 +267,7 @@ namespace summary_list.ViewModels
                             12,
                             Brushes.Black,
                             96);
-                        drawingContext.DrawText(itemText, new Point(x + padding + 30, y + padding + 4));
+                        drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
 
                         currentColumn++;
                         if (currentColumn >= itemsPerRow)
@@ -282,18 +313,12 @@ namespace summary_list.ViewModels
                     CurrentPage = i;
                     UpdateCurrentPage();
 
-                    const int itemWidth = 200;
-                    const int itemHeight = 40;
-                    const int margin = 5;
-                    const int padding = 10;
-
                     // Calculate how many items can fit in a row
-                    int itemsPerRow = (int)(ControlWidth / (itemWidth + margin * 2));
-                    if (itemsPerRow < 1) itemsPerRow = 1;
-
+                    int itemsPerRow = Math.Max(1, (int)((ControlWidth - 20) / (ItemWidth + ItemMargin * 2)));
+                    
                     // Calculate total height needed
                     int totalRows = (int)Math.Ceiling((double)CurrentPageItems.Count / itemsPerRow);
-                    int totalHeight = totalRows * (itemHeight + margin * 2) + 50; // 50 for title and bottom margin
+                    int totalHeight = totalRows * (ItemHeight + ItemMargin * 2) + 50; // 50 for title and bottom margin
 
                     // Ensure the height is at least the control height
                     totalHeight = Math.Max(totalHeight, (int)ControlHeight);
@@ -321,14 +346,14 @@ namespace summary_list.ViewModels
                         int currentColumn = 0;
                         foreach (var item in CurrentPageItems)
                         {
-                            double x = currentColumn * (itemWidth + margin * 2) + margin;
-                            double y = currentRow * (itemHeight + margin * 2) + 40; // 40 for title and top margin
+                            double x = currentColumn * (ItemWidth + ItemMargin * 2) + ItemMargin;
+                            double y = currentRow * (ItemHeight + ItemMargin * 2) + 40; // 40 for title and top margin
 
                             // Draw item background
                             drawingContext.DrawRectangle(
                                 item.IsChecked ? Brushes.LightGreen : Brushes.LightPink,
                                 new Pen(Brushes.Gray, 1),
-                                new Rect(x, y, itemWidth, itemHeight));
+                                new Rect(x, y, ItemWidth, ItemHeight));
 
                             // Draw check symbol and text
                             var symbolText = new FormattedText(
@@ -339,7 +364,7 @@ namespace summary_list.ViewModels
                                 20,
                                 item.IsChecked ? Brushes.Green : Brushes.Red,
                                 96);
-                            drawingContext.DrawText(symbolText, new Point(x + padding, y + padding));
+                            drawingContext.DrawText(symbolText, new Point(x + ItemPadding, y + ItemPadding));
 
                             var itemText = new FormattedText(
                                 item.Text,
@@ -349,7 +374,7 @@ namespace summary_list.ViewModels
                                 12,
                                 Brushes.Black,
                                 96);
-                            drawingContext.DrawText(itemText, new Point(x + padding + 30, y + padding + 4));
+                            drawingContext.DrawText(itemText, new Point(x + ItemPadding + 30, y + ItemPadding + 4));
 
                             currentColumn++;
                             if (currentColumn >= itemsPerRow)

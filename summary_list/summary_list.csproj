@@ -100,6 +100,7 @@
     <Compile Include="Models\SummaryItem.cs" />
     <Compile Include="Converters\CheckToColorConverter.cs" />
     <Compile Include="Converters\WidthToColumnsConverter.cs" />
+    <Compile Include="Converters\BoolToColorConverter.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
   </ItemGroup>
   <ItemGroup>

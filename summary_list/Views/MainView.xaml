@@ -10,6 +10,7 @@
     <UserControl.Resources>
         <converters:CheckToColorConverter x:Key="CheckToColorConverter"/>
         <converters:WidthToColumnsConverter x:Key="WidthToColumnsConverter"/>
+        <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -18,39 +19,44 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
-        <TextBlock Text="{Binding Title}" 
-                   FontSize="24" 
+        <TextBlock Grid.Row="0" 
+                   Text="{Binding Title}" 
+                   FontSize="16" 
                    FontWeight="Bold" 
-                   Margin="10"
-                   HorizontalAlignment="Center"/>
+                   Margin="10"/>
         
         <ItemsControl Grid.Row="1" 
-                     ItemsSource="{Binding CurrentPageItems}"
-                     Margin="10">
+                      ItemsSource="{Binding CurrentPageItems}"
+                      Margin="10">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <UniformGrid Columns="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl}, Path=ActualWidth, Converter={StaticResource WidthToColumnsConverter}}"/>
+                    <WrapPanel/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border BorderBrush="Gray" 
-                            BorderThickness="1" 
+                    <Border Width="200" 
+                            Height="40" 
                             Margin="5" 
-                            Padding="10"
-                            Width="200"
-                            Height="40"
-                            Background="{Binding IsChecked, Converter={StaticResource CheckToColorConverter}}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding CheckSymbol}" 
-                                     FontSize="20"
-                                     FontWeight="Bold"
-                                     Margin="0,0,5,0"
-                                     Foreground="{Binding IsChecked, Converter={StaticResource CheckToColorConverter}}"/>
-                            <TextBlock Text="{Binding Text}" 
-                                     TextWrapping="Wrap"
-                                     VerticalAlignment="Center"/>
-                        </StackPanel>
+                            BorderBrush="Gray" 
+                            BorderThickness="1"
+                            Background="{Binding IsChecked, Converter={StaticResource BoolToColorConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" 
+                                       Text="{Binding CheckSymbol}" 
+                                       FontSize="20" 
+                                       Margin="10,0,0,0"
+                                       Foreground="{Binding IsChecked, Converter={StaticResource BoolToColorConverter}}"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding Text}" 
+                                       FontSize="12" 
+                                       Margin="10,0,0,0"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -65,34 +71,33 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
-            <Button Content="&lt;" 
-                    Width="30"
-                    Height="30"
+            <Button Grid.Column="0" 
+                    Content="Previous" 
+                    Width="70" 
+                    Height="30" 
                     Command="{Binding MoveToPreviousPageCommand}"/>
             
-            <TextBlock Text="{Binding PageInfo}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Grid.Column="1"/>
+            <TextBlock Grid.Column="1" 
+                       Text="{Binding PageInfo}" 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"/>
             
-            <Button Content="&gt;" 
-                    Width="30"
-                    Height="30"
-                    Grid.Column="2"
+            <Button Grid.Column="2" 
+                    Content="Next" 
+                    Width="60" 
+                    Height="30" 
                     Command="{Binding MoveToNextPageCommand}"/>
 
-            <Button Content="Save" 
-                    Width="60"
-                    Height="30"
-                    Margin="10,0,0,0"
-                    Grid.Column="3"
+            <Button Grid.Column="3" 
+                    Content="Save" 
+                    Width="60" 
+                    Height="30" 
                     Command="{Binding SaveCurrentPageCommand}"/>
 
-            <Button Content="Save All" 
-                    Width="70"
-                    Height="30"
-                    Margin="10,0,0,0"
-                    Grid.Column="4"
+            <Button Grid.Column="4" 
+                    Content="Save All" 
+                    Width="70" 
+                    Height="30" 
                     Command="{Binding SaveAllPagesCommand}"/>
         </Grid>
     </Grid>

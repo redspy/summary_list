@@ -3,6 +3,11 @@ using System.Linq;
 using System.Windows.Input;
 using summary_list.Models;
 using summary_list.ViewModels;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.IO;
+using System.Windows;
+using System;
 
 namespace summary_list.ViewModels
 {
@@ -58,6 +63,7 @@ namespace summary_list.ViewModels
 
         public ICommand MoveToNextPageCommand { get; }
         public ICommand MoveToPreviousPageCommand { get; }
+        public ICommand SaveCurrentPageCommand { get; }
 
         public MainViewModel()
         {
@@ -67,6 +73,7 @@ namespace summary_list.ViewModels
             
             MoveToNextPageCommand = new RelayCommand(MoveToNextPage);
             MoveToPreviousPageCommand = new RelayCommand(MoveToPreviousPage);
+            SaveCurrentPageCommand = new RelayCommand(SaveCurrentPage);
             
             // Sample data with simple 3-4 word phrases
             var dummyTexts = new[]
@@ -138,6 +145,57 @@ namespace summary_list.ViewModels
             if (CurrentPage > 0)
             {
                 CurrentPage--;
+            }
+        }
+
+        private void SaveCurrentPage()
+        {
+            try
+            {
+                // Create a visual for the current page
+                var visual = new DrawingVisual();
+                using (var drawingContext = visual.RenderOpen())
+                {
+                    // Create a white background
+                    drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, 800, 450));
+
+                    // Draw each item
+                    double y = 10;
+                    foreach (var item in CurrentPageItems)
+                    {
+                        var formattedText = new FormattedText(
+                            $"{item.CheckSymbol} {item.Text}",
+                            System.Globalization.CultureInfo.CurrentCulture,
+                            FlowDirection.LeftToRight,
+                            new Typeface("Arial"),
+                            12,
+                            item.IsChecked ? Brushes.Green : Brushes.Red,
+                            96);
+
+                        drawingContext.DrawText(formattedText, new Point(10, y));
+                        y += 20;
+                    }
+                }
+
+                // Create a bitmap
+                var bitmap = new RenderTargetBitmap(800, 450, 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(visual);
+
+                // Save the bitmap to a file
+                var encoder = new BmpBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+                var fileName = $"{Guid.NewGuid()}.bmp";
+                using (var stream = File.Create(fileName))
+                {
+                    encoder.Save(stream);
+                }
+
+                MessageBox.Show($"File saved as: {fileName}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

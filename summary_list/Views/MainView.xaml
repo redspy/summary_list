@@ -61,6 +61,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
             <Button Content="&lt;" 
@@ -78,6 +79,13 @@
                     Height="30"
                     Grid.Column="2"
                     Command="{Binding MoveToNextPageCommand}"/>
+
+            <Button Content="Save" 
+                    Width="60"
+                    Height="30"
+                    Margin="10,0,0,0"
+                    Grid.Column="3"
+                    Command="{Binding SaveCurrentPageCommand}"/>
         </Grid>
     </Grid>
 </UserControl> 
